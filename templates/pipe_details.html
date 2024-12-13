@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipe Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/details.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Детали трубы</h1>
+        <div class="pipe-details">
+            <div class="detail"><span>ID:</span> {{ pipe.id }}</div>
+            <div class="detail"><span>Название:</span> {{ pipe.name }}</div>
+            <div class="detail"><span>Диаметр:</span> {{ pipe.diameter }}</div>
+            <div class="detail"><span>Состояние:</span> {{ pipe.state }}</div>
+            <div class="detail"><span>Дата добавления:</span> {{ pipe.date_added }}</div>
+        </div>
+        <a href="/" class="back-button">Назад</a>
+    </div>
+</body>
+</html>
