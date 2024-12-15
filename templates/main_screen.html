@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pipe Watch</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pagination.css') }}">
     <script>
-        function showPipeDetails(id) {
-            window.location.href = `/details/${id}`;
+        function showPipeDetails(id, page) {
+            sessionStorage.setItem('currentPage', page)
+            window.location.href = `/details/${id}?page=${page}`;
         }
 
         function closeDetails() {
@@ -16,11 +18,23 @@
 
         function checkPipeName() {
             const pipeName = document.getElementById('pipe-name').value;
-            if (/^[\s\d]/.test(pipeName)) {
+            if (!/^[a-zA-Zа-яА-Я]/.test(pipeName)) {
                 alert('Название трубы не должно начинаться с пробела или цифры!');
                 document.getElementById('pipe-name').value = '';  
             }
         }
+
+        window.onload = function() {
+            var savedPage = sessionStorage.getItem('currentPage');
+            var currentPage = new URLSearchParams(window.location.search).get('page');
+
+            if (currentPage){
+                sessionStorage.setItem('currentPage', currentPage);
+            } else if(savedPage){
+                window.location.href = `/?page=${savedPage}`;
+            }
+        };
+
 
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('pipe-name').addEventListener('input', checkPipeName);
@@ -28,6 +42,11 @@
                 let value = e.target.value.trim();
                 const validPattern = /^\d+(\.\d+)?\s?(см|м|км|мм|дюймы)?$/;
                 const temporaryPattern = /^\d+(\.)?$/;
+
+                if (value === "") {
+                    return;
+                }
+
                 if (!validPattern.test(value) && !temporaryPattern.test(value)) {
                     alert('Введите корректный диаметр (например, 10 см, 1.5 км, 25 мм)');
                     e.target.value = value.slice(0, -1);
@@ -128,7 +147,7 @@
 </head>
 <body>
     <h1>Контроль труб</h1>
-    <form id="pipe-form" method="POST" action="{{ url_for('add_pipe') }}" class="form-container">
+    <form id="pipe-form" method="POST" action="/add?page={{ page }}" class="form-container">
         <label for="pipe-name">Название трубы:</label>
         <input type="text" id="pipe-name" name="pipe-name" placeholder="Введите название трубы" required>
 
@@ -158,7 +177,7 @@
         </thead>
         <tbody>
             {% for pipe in pipes %}
-            <tr onclick="showPipeDetails('{{ pipe.id }}')">
+            <tr onclick="showPipeDetails('{{ pipe.id }}', '{{ page }}')">
                 <td>{{ pipe.name }}</td>
                 <td>{{ pipe.diameter }}</td>
                 <td>{{ pipe.state }}</td>
@@ -171,5 +190,17 @@
         <div id="pipe-details"></div>
         <button onclick="closeDetails()">Закрыть</button>
     </div>
+
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="/?page={{ page - 1 }}" class="pagination-link">Назад</a>
+        {% endif %}
+        <span class="pagination-info">
+            Страница {{ page }} из {{ total_pages }}
+        </span>
+        {% if page < total_pages %}
+            <a href="/?page={{ page + 1 }}" class="pagination-link">Вперёд</a>
+        {% endif %}
+    </div>        
 </body>
 </html>

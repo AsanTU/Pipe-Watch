@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import sqlite3
 import datetime
-import os
 
 app = Flask(__name__)
 
@@ -12,13 +11,28 @@ def get_db_connection():
 
 @app.route('/')
 def home():
+    page = int(request.args.get('page', 1))  # Получаем текущую страницу из URL
+    per_page = 10                            # Количество записей на страницу
+    offset = (page - 1) * per_page           # Смещение (например, для 2-й страницы: (2-1)*10 = 10)
+
     conn = get_db_connection()
-    pipes = conn.execute('SELECT * FROM pipes').fetchall()
+
+    # Считаем общее количество записей в таблице
+    total_pipes = conn.execute('SELECT COUNT(*) FROM pipes').fetchone()[0]
+
+    # Загружаем записи только для текущей страницы
+    pipes = conn.execute('SELECT * FROM pipes LIMIT ? OFFSET ?', (per_page, offset)).fetchall()
     conn.close()
-    return render_template('main_screen.html', pipes=pipes)
+
+    # Если смещение превышает количество записей, данные будут пустыми
+    total_pages = (total_pipes + per_page - 1) // per_page
+
+    return render_template('main_screen.html', pipes=pipes, page=page, total_pages=total_pages)
+
 
 @app.route('/add', methods=['POST'])
 def add_pipe():
+    page = request.args.get('page', 1)  
     if request.method == 'POST':
         pipe_name = request.form.get('pipe-name')
         if pipe_name[0].isdigit():
@@ -37,21 +51,22 @@ def add_pipe():
             conn.commit()
             print("Data inserted successfully")
         except Exception as e:
-            print(f"Error inserting data: {e}")
+            print(f"Error inserting data: {e}", 500)
         finally:
             conn.close()
 
-        return redirect('/')
+        return redirect(url_for('home', page=page))
 
 @app.route('/details/<int:id>')
 def pipe_details(id):
+    page = request.args.get('page', 1)  
     conn = get_db_connection()
     pipe = conn.execute('SELECT * FROM pipes WHERE id = ?', (id, )).fetchone()
     conn.close()
     if pipe is None:
         return "Труба не найдена", 404
     
-    return render_template('pipe_details.html', pipe=pipe)
+    return render_template('pipe_details.html', pipe=pipe, page=page)
 
 if __name__ == '__main__':
     app.run(debug=True)
