@@ -11,20 +11,17 @@ def get_db_connection():
 
 @app.route('/')
 def home():
-    page = int(request.args.get('page', 1))  # Получаем текущую страницу из URL
-    per_page = 10                            # Количество записей на страницу
-    offset = (page - 1) * per_page           # Смещение (например, для 2-й страницы: (2-1)*10 = 10)
+    page = int(request.args.get('page', 1))  
+    per_page = 10                            
+    offset = (page - 1) * per_page           
 
     conn = get_db_connection()
 
-    # Считаем общее количество записей в таблице
     total_pipes = conn.execute('SELECT COUNT(*) FROM pipes').fetchone()[0]
 
-    # Загружаем записи только для текущей страницы
     pipes = conn.execute('SELECT * FROM pipes LIMIT ? OFFSET ?', (per_page, offset)).fetchall()
     conn.close()
 
-    # Если смещение превышает количество записей, данные будут пустыми
     total_pages = (total_pipes + per_page - 1) // per_page
 
     return render_template('main_screen.html', pipes=pipes, page=page, total_pages=total_pages)
